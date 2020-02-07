@@ -1,0 +1,120 @@
+```Powershell
+#Realizar una captura de pantalla 
+
+[Reflection.Assembly]::LoadWithPartialName("System.Drawing")
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+function screenshot($path)
+{
+	$b=New-Object System.Drawing.Bitmap([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
+	$g=[System.Drawing.Graphics]::FromImage($b)
+	$g.CopyFromScreen((New-Object System.Drawing.Point(0,0)), (New-Object System.Drawing.Point(0,0)), $b.Size)
+	$g.Dispose()
+	$b.Save($path,'Bmp')
+}
+
+$form = New-Object System.Windows.Forms.Form 
+$form.Text = "Guardar fondo"
+$form.Size = New-Object System.Drawing.Size(300,200) 
+$form.StartPosition = "CenterScreen"
+
+$OKButton = New-Object System.Windows.Forms.Button
+$OKButton.Location = New-Object System.Drawing.Point(75,120)
+$OKButton.Size = New-Object System.Drawing.Size(75,23)
+$OKButton.Text = "Guardar"
+$OKButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+$form.AcceptButton = $OKButton
+$form.Controls.Add($OKButton)
+
+$CancelButton = New-Object System.Windows.Forms.Button
+$CancelButton.Location = New-Object System.Drawing.Point(150,120)
+$CancelButton.Size = New-Object System.Drawing.Size(75,23)
+$CancelButton.Text = "Cancelar"
+$CancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+$form.CancelButton = $CancelButton
+$form.Controls.Add($CancelButton)
+
+$label = New-Object System.Windows.Forms.Label
+$label.Location = New-Object System.Drawing.Point(10,20) 
+$label.Size = New-Object System.Drawing.Size(280,20) 
+$label.Text = "Nombre para guardar la foto:"
+$form.Controls.Add($label) 
+
+$textBox = New-Object System.Windows.Forms.TextBox 
+$textBox.Location = New-Object System.Drawing.Point(10,40) 
+$textBox.Size = New-Object System.Drawing.Size(260,20) 
+$form.Controls.Add($textBox) 
+
+$form.Topmost = $True
+
+$form.Add_Shown({$textBox.Select()})
+$result = $form.ShowDialog()
+
+if ($result -eq [System.Windows.Forms.DialogResult]::OK)
+{
+Start-Sleep -Seconds 1
+$x = $textBox.Text
+$path= "C:\pruebas\$x.bmp"
+screenshot($path)
+}
+
+#Habla cortana
+(New-Object -com SAPI.SpVoice).speak("Hola capullo")
+
+
+
+#Mandar correo
+
+$Outlook = New-Object -ComObject Outlook.Application
+$Mail = $Outlook.CreateItem(0)
+$Mail.To = "sergioarmenterosmoleon@gmail.com"
+$Mail.Subject = "Capullo"
+$Mail.Body ="Texto del mail"
+$Mail.Send()
+#Otra opción
+$componer = "Contenido de prueba" 
+Send-MailMessage -to "sergioarmenterosmoleon@gmail.com" -from “aaronsa99@gmail.com” -subject "Correo de prueba" -SmtpServer 127.0.0.0 -Body $componer
+
+## Enviar captura de pantalla Server
+while(1){
+$port=2050
+$IPEndPoint=New-Object System.Net.IPEndPoint([IPAddress]::Any,$port)
+$TcpListener=New-Object System.Net.Sockets.TcpListener $IPEndPoint
+$TcpListener.Start()
+
+$AcceptTcpClient=$TcpListener.AcceptTcpClient()
+$GetStream=$AcceptTcpClient.GetStream()
+$StreamReader=New-Object System.IO.StreamReader $GetStream
+
+$ReadAllLines = $StreamReader.ReadToEnd()
+$Bytes = ([system.Text.Encoding]::Default).GetBytes($ReadAllLines)
+[System.IO.File]::WriteAllBytes('F:\power\screenshotcopy.bmp',$Bytes)
+
+$StreamReader.Dispose()
+$GetStream.Dispose()
+$AcceptTcpClient.Dispose()
+$TcpListener.Stop()
+}
+
+
+##Screenshot Client
+$port=2050
+$TcpClient=New-Object System.Net.Sockets.TcpClient([IPAddress]::10.0.2.15, $port)
+$GetStream = $TcpClient.GetStream()
+$StreamWriter = New-Object System.IO.StreamWriter $GetStream
+
+$path=’F:\power\screenshot.bmp’
+$Bitmap=New-Object System.Drawing.Bitmap([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
+$Graphics=[System.Drawing.Graphics]::FromImage($Bitmap)
+$Graphics.CopyFromScreen((New-Object System.Drawing.Point(0,0)), (New-Object System.Drawing.Point(0,0)), $Bitmap.Size)
+$Graphics.Dispose()
+$Bitmap.Save($path,'Bmp')
+
+$Bytes = [System.IO.File]::ReadAllBytes($path)
+$StreamWriter.Write($Bytes,0,$Bytes.length)
+
+$StreamWriter.Dispose()
+$GetStream.Dispose()
+$TcpClient.Dispose()
+´´´
